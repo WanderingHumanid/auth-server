@@ -32,6 +32,8 @@ This section guides you through submitting an enhancement suggestion for Auth Se
 ## Development Setup
 
 ### Workflow
+We follow Agile methodologies: work is organized into short sprints, issues are prioritized in a backlog, and milestones guide releases. Please reference related issues and use labels/milestones to help triage and track work.
+
 1.  Fork the repo and create your branch from `main`.
 2.  If you've added code that should be tested, add tests.
 3.  If you've changed APIs, update the documentation.
