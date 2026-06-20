@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"log"
+	"math"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -46,7 +48,8 @@ func Register(counter SessionCounter) {
 		func() float64 {
 			count, err := counter.CountActiveSessions()
 			if err != nil {
-				return 0
+				log.Printf("metrics: failed to count active sessions: %v", err)
+				return math.NaN()
 			}
 			return float64(count)
 		},

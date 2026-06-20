@@ -90,14 +90,22 @@ func main() {
 
 	// Prometheus metrics endpoint
 
+	metricsAddr := os.Getenv("METRICS_ADDR")
+	if metricsAddr == "" {
+		metricsAddr = "127.0.0.1:9090"
+	}
+
 	metricsServer := &http.Server{
-		Addr:    ":9090",
-		Handler: promhttp.Handler(),
+		Addr:              metricsAddr,
+		Handler:           promhttp.Handler(),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	go func() {
 
-		log.Printf("📊 Prometheus metrics exposed on http://localhost%s/metrics", metricsServer.Addr)
+		log.Printf("📊 Prometheus metrics exposed on http://localhost%s/metrics", metricsAddr)
 
 		if err := metricsServer.ListenAndServe(); err != nil &&
 			err != http.ErrServerClosed {
