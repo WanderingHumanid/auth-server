@@ -567,6 +567,7 @@ func (s *AuthService) Login(req *dto.LoginRequest, ipAddress, userAgent string) 
 	if err != nil {
 		// Increment attempts even for non-existent users (to prevent enumeration)
 		s.cacheService.IncrementLoginAttempts(ctx, req.Email)
+		metrics.LoginFailureTotal.Inc()
 		return nil, errors.New("invalid email or password")
 	}
 
@@ -858,10 +859,10 @@ func (s *AuthService) Logout(accessToken, refreshToken string) error {
 	if refreshToken != "" {
 		if err := s.tokenRepo.RevokeRefreshToken(refreshToken); err != nil {
 			log.Printf("Warning: Failed to revoke refresh token: %v", err)
+		} else {
+			metrics.ActiveSessions.Dec()
 		}
 	}
-
-	metrics.ActiveSessions.Dec()
 
 	return nil
 }

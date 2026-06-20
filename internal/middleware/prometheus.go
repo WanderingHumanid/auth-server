@@ -18,7 +18,7 @@ func PrometheusMiddleware() gin.HandlerFunc {
 
 		path := c.FullPath()
 		if path == "" {
-			path = c.Request.URL.Path
+			path = "unmatched_route"
 		}
 
 		status := strconv.Itoa(c.Writer.Status())
