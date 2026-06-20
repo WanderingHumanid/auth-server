@@ -173,3 +173,13 @@ func (r *TokenRepository) RotateRefreshToken(oldToken string, newToken *models.R
 		return nil
 	})
 }
+
+func (r *TokenRepository) CountActiveSessions() (int64, error) {
+	var count int64
+
+	err := r.db.Model(&models.RefreshToken{}).
+		Where("is_revoked = ? AND expires_at > ?", false, time.Now()).
+		Count(&count).Error
+
+	return count, err
+}

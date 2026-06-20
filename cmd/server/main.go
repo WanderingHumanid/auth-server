@@ -17,6 +17,7 @@ import (
 	"github.com/roshankumar0036singh/auth-server/internal/middleware"
 	"github.com/roshankumar0036singh/auth-server/internal/models"
 	"github.com/roshankumar0036singh/auth-server/internal/routes"
+	"github.com/roshankumar0036singh/auth-server/internal/repository"
 )
 
 // @title Auth Server API
@@ -40,8 +41,6 @@ import (
 func main() {
 	// Load configuration
 	cfg := config.LoadConfig()
-
-	metrics.Register()
 
 	// Initialize database
 	db := config.InitDatabase(cfg)
@@ -77,15 +76,34 @@ func main() {
 
 	// Setup Gin
 	if cfg.App.Env == "production" {
+
 		gin.SetMode(gin.ReleaseMode)
 	}
+
+	tokenRepo := repository.NewTokenRepository(db)
+
+	metrics.Register(tokenRepo)
 
 	router := gin.Default()
 
 	router.Use(middleware.PrometheusMiddleware())
 
 	// Prometheus metrics endpoint
-	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	metricsServer := &http.Server{
+		Addr:    ":9090",
+		Handler: promhttp.Handler(),
+	}
+
+	go func() {
+
+		log.Printf("📊 Prometheus metrics exposed on http://localhost%s/metrics", metricsServer.Addr)
+
+		if err := metricsServer.ListenAndServe(); err != nil &&
+			err != http.ErrServerClosed {
+			log.Printf("Metrics server error: %v", err)
+		}
+	}()
 
 	// Load HTML templates for OAuth consent
 	router.LoadHTMLGlob("templates/*")
@@ -147,6 +165,11 @@ func main() {
 	// Shutdown HTTP server
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Printf("Server forced to shutdown: %v", err)
+	}
+
+	// Shutdown metrics server
+	if err := metricsServer.Shutdown(ctx); err != nil {
+		log.Printf("Metrics server forced to shutdown: %v", err)
 	}
 
 	// Close database connection

@@ -620,7 +620,6 @@ func (s *AuthService) Login(req *dto.LoginRequest, ipAddress, userAgent string) 
 	}
 
 	metrics.LoginSuccessTotal.Inc()
-	metrics.ActiveSessions.Inc()
 
 	// Audit Log
 	s.auditService.LogEvent(&user.ID, "USER_LOGIN_SUCCESS", "USER", user.ID, ipAddress, userAgent, nil)
@@ -859,8 +858,6 @@ func (s *AuthService) Logout(accessToken, refreshToken string) error {
 	if refreshToken != "" {
 		if err := s.tokenRepo.RevokeRefreshToken(refreshToken); err != nil {
 			log.Printf("Warning: Failed to revoke refresh token: %v", err)
-		} else {
-			metrics.ActiveSessions.Dec()
 		}
 	}
 
