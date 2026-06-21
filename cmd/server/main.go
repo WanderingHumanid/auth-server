@@ -105,7 +105,7 @@ func main() {
 
 	go func() {
 
-		log.Printf("📊 Prometheus metrics exposed on http://localhost%s/metrics", metricsAddr)
+		log.Printf("📊 Prometheus metrics exposed on http://%s/metrics", metricsAddr)
 
 		if err := metricsServer.ListenAndServe(); err != nil &&
 			err != http.ErrServerClosed {
@@ -176,7 +176,9 @@ func main() {
 	}
 
 	// Shutdown metrics server
-	if err := metricsServer.Shutdown(ctx); err != nil {
+	metricsCtx, metricsCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer metricsCancel()
+	if err := metricsServer.Shutdown(metricsCtx); err != nil {
 		log.Printf("Metrics server forced to shutdown: %v", err)
 	}
 

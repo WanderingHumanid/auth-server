@@ -2,7 +2,9 @@ package metrics
 
 import (
 	"log"
-	"math"
+	"sync"
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -29,9 +31,9 @@ var (
 		},
 		[]string{"method", "endpoint", "status"},
 	)
-	HTTPRequestDuration = prometheus.NewHistogramVec(
+	AuthHTTPRequestDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:    "http_request_duration_seconds",
+			Name:    "auth_http_request_duration_seconds",
 			Help:    "HTTP request latency",
 			Buckets: prometheus.DefBuckets,
 		},
@@ -40,17 +42,33 @@ var (
 )
 
 func Register(counter SessionCounter) {
+	var (
+		lastCount int64
+		lastFetch time.Time
+		mu        sync.Mutex
+	)
+
 	activeSessions := prometheus.NewGaugeFunc(
 		prometheus.GaugeOpts{
 			Name: "auth_active_sessions",
 			Help: "Current number of active user sessions",
 		},
 		func() float64 {
+			mu.Lock()
+			defer mu.Unlock()
+
+			if time.Since(lastFetch) < 30*time.Second {
+				return float64(lastCount)
+			}
+
 			count, err := counter.CountActiveSessions()
 			if err != nil {
 				log.Printf("metrics: failed to count active sessions: %v", err)
-				return math.NaN()
+				return -1
 			}
+
+			lastCount = count
+			lastFetch = time.Now()
 			return float64(count)
 		},
 	)
@@ -60,6 +78,6 @@ func Register(counter SessionCounter) {
 		LoginFailureTotal,
 		activeSessions,
 		HTTPRequestsTotal,
-		HTTPRequestDuration,
+		AuthHTTPRequestDuration,
 	)
 }

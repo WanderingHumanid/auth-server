@@ -24,6 +24,6 @@ func PrometheusMiddleware() gin.HandlerFunc {
 		status := strconv.Itoa(c.Writer.Status())
 
 		metrics.HTTPRequestsTotal.WithLabelValues(c.Request.Method, path, status).Inc()
-		metrics.HTTPRequestDuration.WithLabelValues(c.Request.Method, path).Observe(duration)
+		metrics.AuthHTTPRequestDuration.WithLabelValues(c.Request.Method, path).Observe(duration)
 	}
 }

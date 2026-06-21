@@ -567,7 +567,6 @@ func (s *AuthService) Login(req *dto.LoginRequest, ipAddress, userAgent string) 
 	if err != nil {
 		// Increment attempts even for non-existent users (to prevent enumeration)
 		s.cacheService.IncrementLoginAttempts(ctx, req.Email)
-		metrics.LoginFailureTotal.Inc()
 		return nil, errors.New("invalid email or password")
 	}
 
